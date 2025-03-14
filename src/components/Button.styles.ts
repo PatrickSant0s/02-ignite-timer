@@ -1,6 +1,12 @@
 import styled from "styled-components";
 
-export const ButtonContainer = styled.button`
+export type ButtonVariant = "primary" | "secondary" | "danger" | "success";
+
+interface ButtonContainerProps {
+  variant: ButtonVariant;
+}
+
+export const ButtonContainer = styled.button<ButtonContainerProps>`
   width: 150px;
   height: 50px;
 `;
