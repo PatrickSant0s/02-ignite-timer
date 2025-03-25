@@ -1,8 +1,9 @@
 import { Play } from "phosphor-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
+import { differenceInSeconds } from "date-fns";
 
 import {
   CountdownContainer,
@@ -34,11 +35,12 @@ interface Cycle {
   task: string;
   minutesAmount: number;
   isActive: boolean;
+  startDate: Date;
 }
 
 export function Home() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [acitiveCycleId, setAcitiveCycleId] = useState<string | null>(null);
+  const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
   const [amountSecondsPassed, setAmountSecondsPassed] = useState(0);
 
   const { register, handleSubmit, watch, reset } = useForm<newCiclyFormData>({
@@ -48,6 +50,25 @@ export function Home() {
       task: "",
     },
   });
+  const activeCycle = cycles.find(
+    (cycles) => cycles.id === activeCycleId
+  ); /* busca dentro do ciclos o id do atual e retorna o primeiro q atender as especificações */
+  console.log(activeCycle);
+
+  useEffect(() => {
+    /* se tiver um ciclo ativo, eu vou dar um intervalor de 1s e comprar a data atual com os segundos q ja passaram */
+    let interval: number;
+    if (activeCycle) {
+      interval = setInterval(() => {
+        setAmountSecondsPassed(
+          differenceInSeconds(new Date(), activeCycle.startDate)
+        );
+      }, 1000);
+    }
+    return () => {
+      clearInterval(interval);
+    };
+  }, [activeCycle]);
 
   function handleCreateNewCyvle(data: newCiclyFormData) {
     const id = String(new Date().getTime());
@@ -56,18 +77,14 @@ export function Home() {
       id,
       task: data.task,
       minutesAmount: data.minutesAmount,
+      startDate: new Date(),
     };
 
     setCycles((state) => [...state, newCycle]);
-    setAcitiveCycleId(id);
-
+    setActiveCycleId(id);
+    setAmountSecondsPassed(0);
     reset();
   }
-
-  const activeCycle = cycles.find(
-    (cycles) => cycles.id === acitiveCycleId
-  ); /* busca dentro do ciclos o id do atual e retorna o primeiro q atender as especificações */
-  console.log(activeCycle);
 
   const totalSeconds = activeCycle
     ? activeCycle.minutesAmount * 60
@@ -88,6 +105,12 @@ export function Home() {
     2,
     "0"
   ); /* garante que a string tenha pelo menos 2 caracteres*/
+
+  useEffect(() => {
+    if (activeCycle) {
+      document.title = `${minutes} : ${seconds}`;
+    }
+  }, [minutes, seconds]); /*fazer o time aparecer no title da pagina */
 
   const task = watch("task");
   const isSubmitDisabled = !task;
