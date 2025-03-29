@@ -1,6 +1,6 @@
 import { HandPalm, Play } from "phosphor-react";
 import { createContext, useState } from "react";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
 
@@ -40,7 +40,9 @@ interface Cycle {
 interface CyclesContextType {
   activeCycle: Cycle | undefined;
   activeCycleId: string | null;
+  amountSecondsPassed: number;
   markCurrentCyclesAsFinished: () => void;
+  setSecondsPassed: (seconds: number) => void;
 }
 
 export const CyclesContext = createContext({} as CyclesContextType);
@@ -49,13 +51,16 @@ export function Home() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
 
-  const { register, handleSubmit, watch, reset } = useForm<newCiclyFormData>({
+  const [amountSecondsPassed, setAmountSecondsPassed] = useState(0);
+
+  const newCycleForm = useForm<newCiclyFormData>({
     resolver: zodResolver(newCycleFormValidationSchema),
     defaultValues: {
       minutesAmount: 0,
       task: "",
     },
   });
+  const { handleSubmit, watch, reset } = newCycleForm;
   const activeCycle = cycles.find(
     (cycles) => cycles.id === activeCycleId
   ); /* busca dentro do ciclos o id do atual e retorna o primeiro q atender as especificações */
@@ -111,6 +116,10 @@ export function Home() {
   const task = watch("task");
   const isSubmitDisabled = !task;
 
+  function setSecondsPassed(seconds: number) {
+    setAmountSecondsPassed(seconds);
+  }
+
   console.log(cycles);
 
   return (
@@ -118,10 +127,17 @@ export function Home() {
       <HomeContainer>
         <form action="" onSubmit={handleSubmit(handleCreateNewCyvle)}>
           <CyclesContext.Provider
-            value={{ activeCycle, activeCycleId, markCurrentCyclesAsFinished }}
+            value={{
+              activeCycle,
+              activeCycleId,
+              markCurrentCyclesAsFinished,
+              amountSecondsPassed,
+              setSecondsPassed,
+            }}
           >
-            <NewCycleForm />
-
+            <FormProvider {...newCycleForm}>
+              <NewCycleForm />
+            </FormProvider>
             <Countdown />
           </CyclesContext.Provider>
           {activeCycle ? (
